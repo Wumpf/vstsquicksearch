@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,9 +22,118 @@ namespace VstsQuickSearch
     /// </summary>
     public partial class MainWindow : Window
     {
+        private ServerConnection connection = new ServerConnection();
+        private SearchableWorkItemDatabase workItemDatabase = new SearchableWorkItemDatabase();
+
+        public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; set; } = new ObservableCollection<QueryHierarchyItem>();
+        public ObservableCollection<SearchableWorkItem> SearchResults { get; set; } = new ObservableCollection<SearchableWorkItem>();
+
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private async Task<bool> EnsureConnection()
+        {
+            try
+            {
+                await connection.Connect(inputServerAdress.Text, inputProjectName.Text);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message, "Failed to connect!");
+                return false;
+            }
+        }
+
+        private async void UpdateQueryList(object sender, RoutedEventArgs e)
+        {
+            var senderUi = (UIElement)sender;
+            senderUi.IsEnabled = false;
+
+            buttonDownloadWorkItems.IsEnabled = false;
+
+            try
+            {
+                if (await EnsureConnection() == false)
+                    return;
+
+                try
+                {
+                    QueryHierachyItems.Clear();
+                    var queries = await connection.ListQueries();
+                    foreach (var query in queries)
+                        QueryHierachyItems.Add(query);
+                }
+                catch (Exception exception)
+                {
+                    MessageBox.Show(exception.Message, "Failed to retrieve queries!");
+                    return;
+                }
+            }
+            finally
+            {
+                senderUi.IsEnabled = true;
+            }
+        }
+
+        private async void DownloadWorkItems(object sender, RoutedEventArgs e)
+        {
+            var senderUi = (UIElement)sender;
+            senderUi.IsEnabled = false;
+            try
+            {
+                if (await EnsureConnection() == false)
+                    return;
+
+                QueryHierarchyItem selectedQuery = listQueries.SelectedItem as QueryHierarchyItem;
+                if (selectedQuery == null || !(selectedQuery.HasChildren ?? true))
+                {
+                    MessageBox.Show("You need to select a Query first!", "Failed to download Work Items!");
+                    return;
+                }
+
+                await workItemDatabase.DownloadData(connection, selectedQuery.Id);
+                labelLastUpdated.Content = DateTime.Now.ToString("HH:mm");
+                labelNumDownloadedWI.Content = workItemDatabase.NumWorkItems.ToString();
+                UpdateSearchBox(inputSearchText.Text);
+            }
+            finally
+            {
+                senderUi.IsEnabled = true;
+            }
+        }
+
+        private void QuerySelected(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            QueryHierarchyItem selectedQuery = listQueries.SelectedItem as QueryHierarchyItem;
+            buttonDownloadWorkItems.IsEnabled = (selectedQuery != null && !(selectedQuery.HasChildren ?? false));
+        }
+
+        private void SearchChanged(object sender, TextChangedEventArgs e)
+        {
+            TextBox searchBox = (TextBox)sender;
+            UpdateSearchBox(searchBox.Text);
+        }
+
+        private void UpdateSearchBox(string searchText)
+        {
+            var searchResult = workItemDatabase.SearchInDatabase(new SearchQuery(searchText)); // Todo: Should be non-blocking!!!!
+            searchResult = searchResult.OrderBy(x => x.Item.Id);
+            var searchResultList = searchResult.ToList();
+
+            SearchResults.Clear();
+            foreach (var elem in searchResultList)
+                SearchResults.Add(elem);
+        }
+
+        private void OnWorkItemDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            ListBox listBox = (ListBox)sender;
+            SearchableWorkItem item = listBox.SelectedItem as SearchableWorkItem;
+            System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.Item.Id ?? 0));
         }
     }
 }
