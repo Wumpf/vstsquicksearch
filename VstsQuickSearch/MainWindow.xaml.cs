@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +29,18 @@ namespace VstsQuickSearch
         public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; set; } = new ObservableCollection<QueryHierarchyItem>();
         public ObservableCollection<SearchableWorkItem> SearchResults { get; set; } = new ObservableCollection<SearchableWorkItem>();
 
+
+        private CancellationTokenSource searchCancellation;
+        private Task searchTask;
+
+        private void CancelRunningSearch()
+        {
+            searchCancellation?.Cancel();
+            searchTask?.Wait();
+
+            searchCancellation?.Dispose();
+            searchCancellation = null;
+        }
 
         public MainWindow()
         {
@@ -96,6 +109,7 @@ namespace VstsQuickSearch
                 }
 
                 await workItemDatabase.DownloadData(connection, selectedQuery.Id);
+
                 labelLastUpdated.Content = DateTime.Now.ToString("HH:mm");
                 labelNumDownloadedWI.Content = workItemDatabase.NumWorkItems.ToString();
                 UpdateSearchBox(inputSearchText.Text);
@@ -120,13 +134,30 @@ namespace VstsQuickSearch
 
         private void UpdateSearchBox(string searchText)
         {
-            var searchResult = workItemDatabase.SearchInDatabase(new SearchQuery(searchText)); // Todo: Should be non-blocking!!!!
-            searchResult = searchResult.OrderBy(x => x.Item.Id);
-            var searchResultList = searchResult.ToList();
+            CancelRunningSearch();
 
-            SearchResults.Clear();
-            foreach (var elem in searchResultList)
-                SearchResults.Add(elem);
+            // Start new search.
+            searchCancellation = new CancellationTokenSource();
+            searchTask = Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var searchResult = workItemDatabase.SearchInDatabase(new SearchQuery(searchText), searchCancellation.Token);
+                    searchResult = searchResult.OrderBy(x => x.Item.Id);
+                    var searchResultList = searchResult.ToList();
+
+                    if (!searchCancellation.Token.IsCancellationRequested)
+                    {
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            SearchResults.Clear();
+                            foreach (var elem in searchResultList)
+                                SearchResults.Add(elem);
+                        }));
+                    }
+                }
+                catch (System.OperationCanceledException) { } // Can happen, everything else is an actual error.
+            });
         }
 
         private void OnWorkItemDoubleClick(object sender, MouseButtonEventArgs e)

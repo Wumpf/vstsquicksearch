@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace VstsQuickSearch
@@ -12,12 +13,15 @@ namespace VstsQuickSearch
 
         public int NumWorkItems { get { return itemDatabase.Count; } }
 
-        public IEnumerable<SearchableWorkItem> SearchInDatabase(SearchQuery search)
+        public IEnumerable<SearchableWorkItem> SearchInDatabase(SearchQuery search, CancellationToken cancellationToken)
         {
-            if (search.IsEmpty)
-                return itemDatabase;
-            else
-                return itemDatabase.AsParallel().Where(x => x.MatchesSearchQuery(search));
+            lock (itemDatabase)
+            {
+                if (search.IsEmpty)
+                    return itemDatabase;
+                else
+                    return itemDatabase.AsParallel().WithCancellation(cancellationToken).Where(x => x.MatchesSearchQuery(search));
+            }
         }
 
         public async Task DownloadData(ServerConnection connection, Guid queryId)
@@ -51,7 +55,10 @@ namespace VstsQuickSearch
             while (workItemRefs.Count() == batchSize);
 
 
-            itemDatabase = newDatabase;
+            lock (itemDatabase)
+            {
+                itemDatabase = newDatabase;
+            }
         }
     }
 }
