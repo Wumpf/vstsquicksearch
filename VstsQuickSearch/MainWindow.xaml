@@ -6,25 +6,31 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VstsQuickSearch"
         mc:Ignorable="d"
-        Title="MainWindow" Height="507.333" SizeToContent="Width" Width="654">
+        Title="MainWindow" SizeToContent="Width" MinHeight="400" MinWidth="600" Height="500" Width="600">
     <Grid Height="auto">
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto" MinHeight="200"/>
+            <RowDefinition Height="15"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <StackPanel>
-            <StackPanel Orientation="Horizontal">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Horizontal" Grid.Row="0">
                 <Label Content="Server Adress:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
                 <TextBox x:Name="inputServerAdress" Text="name.visualstudio.com" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Center" Width="180"/>
                 <Label Content="Project Name:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
                 <TextBox x:Name="inputProjectName" Text="ProjectName" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Center" Width="180"/>
             </StackPanel>
 
-            <Label Content="Queries for Downloading Work Items:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,0"/>
-            <StackPanel Orientation="Horizontal">
-                <StackPanel>
-
-                    <StackPanel.Resources>
+            <Label Content="Queries for Downloading Work Items:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,0" Grid.Row="1"/>
+            <DockPanel Grid.Row="2">
+                <DockPanel>
+                    <DockPanel.Resources>
                         <HierarchicalDataTemplate x:Key="QueryChildTemplate" >
                             <TextBlock Text="{Binding Path=Name}" />
                         </HierarchicalDataTemplate>
@@ -33,12 +39,12 @@
                                 ItemTemplate="{StaticResource QueryChildTemplate}">
                             <TextBlock Text="{Binding Path=Name}" FontWeight="Bold" />
                         </HierarchicalDataTemplate>
-                    </StackPanel.Resources>
-                    <TreeView x:Name="listQueries" Width="200" Height="100" Margin="5,5,5,5" ItemsSource="{Binding}" ItemTemplate="{StaticResource QueryTemplate}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected"/>
-                </StackPanel>
+                    </DockPanel.Resources>
+                    <TreeView x:Name="listQueries" Width="279" Margin="5,0, 5, 5" ItemsSource="{Binding}" ItemTemplate="{StaticResource QueryTemplate}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected"/>
+                </DockPanel>
                 <StackPanel>
-                    <Button Content="Update Query List" Margin="5,5,5,5" Click="UpdateQueryList"/>
-                    <Button x:Name="buttonDownloadWorkItems" Content="Download Work Items" Margin="5,5,5,5" Click="DownloadWorkItems" IsEnabled="False"/>
+                    <Button Content="Update Query List" Click="UpdateQueryList" Width="200" HorizontalAlignment="Left" Margin="0, 5"/>
+                    <Button x:Name="buttonDownloadWorkItems" Content="Download Work Items" Click="DownloadWorkItems" IsEnabled="False" Width="200" HorizontalAlignment="Left"/>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto"/>
@@ -49,14 +55,15 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Label Content="Last Update:" Grid.Row="0" Grid.Column="0"/>
-                        <Label x:Name="labelLastUpdated" Content="xx" Grid.Row="0" Grid.Column="1"/>
+                        <Label x:Name="labelLastUpdated" Grid.Row="0" Grid.Column="1"/>
                         <Label Content="# Work Items:" Grid.Row="1" Grid.Column="0"/>
-                        <Label x:Name="labelNumDownloadedWI" Content="xx" Grid.Row="1" Grid.Column="1"/>
+                        <Label x:Name="labelNumDownloadedWI" Grid.Row="1" Grid.Column="1"/>
                     </Grid>
                 </StackPanel>
-            </StackPanel>
-        </StackPanel>
-        <Grid Grid.Row="1">
+            </DockPanel>
+        </Grid>
+        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Margin="0,5,0,5"/>
+        <Grid Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="*"/>
@@ -67,7 +74,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Label Content="Search:" Grid.Column="0" Margin="5,5,5,5"/>
-                <TextBox x:Name="inputSearchText" HorizontalAlignment="Stretch" VerticalAlignment="Center" TextWrapping="Wrap" Text="TextBox" Grid.Column="1" Margin="5,5,5,5" TextChanged="SearchChanged"/>
+                <TextBox x:Name="inputSearchText" HorizontalAlignment="Stretch" VerticalAlignment="Center" TextWrapping="Wrap" Grid.Column="1" Margin="5,5,5,5" TextChanged="SearchChanged"/>
             </Grid>
             <ListBox Grid.Row="1" Margin="5,0,5,5" ItemsSource="{Binding ElementName=Window1, Path=SearchResults}" MouseDoubleClick="OnWorkItemDoubleClick"/>
         </Grid>
