@@ -77,7 +77,7 @@
                 <Label Content="Search:" Grid.Column="0" Margin="5,5,5,5"/>
                 <TextBox x:Name="inputSearchText" HorizontalAlignment="Stretch" VerticalAlignment="Center" TextWrapping="Wrap" Grid.Column="1" Margin="5,5,5,5" TextChanged="SearchChanged"/>
             </Grid>
-            <ListBox Grid.Row="1" Margin="5,0,5,5" ItemsSource="{Binding ElementName=Window1, Path=SearchResults}" MouseDoubleClick="OnWorkItemDoubleClick"/>
+            <ListView x:Name="listViewSearchResults" Grid.Row="1" Margin="5,0,5,5" ItemsSource="{Binding ElementName=Window1, Path=SearchResults}" MouseDoubleClick="OnWorkItemDoubleClick"/>
         </Grid>
     </Grid>
 </Window>

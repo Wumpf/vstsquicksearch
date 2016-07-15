@@ -110,10 +110,33 @@ namespace VstsQuickSearch
                     return;
                 }
 
-                await workItemDatabase.DownloadData(connection, selectedQuery.Id, DownloadComments);
+                try
+                {
+                    await workItemDatabase.DownloadData(connection, selectedQuery.Id, DownloadComments);
+                }
+                catch(Exception exp)
+                {
+                    MessageBox.Show(exp.Message, "Failed to download Work Items!");
+                    return;
+                }
 
                 labelLastUpdated.Content = DateTime.Now.ToString("HH:mm");
                 labelNumDownloadedWI.Content = workItemDatabase.NumWorkItems.ToString();
+
+                var gridView = new GridView();
+                listViewSearchResults.View = gridView;
+                if (workItemDatabase.LastQueryColumnDisplay != null)
+                {
+                    foreach (var column in workItemDatabase.LastQueryColumnDisplay)
+                    {
+                        gridView.Columns.Add(new GridViewColumn
+                        {
+                            Header = column.Name,
+                            DisplayMemberBinding = new Binding("[" + column.ReferenceName + "]")
+                        });
+                    }
+                }
+
                 UpdateSearchBox(inputSearchText.Text);
             }
             finally
@@ -145,7 +168,7 @@ namespace VstsQuickSearch
                 try
                 {
                     var searchResult = workItemDatabase.SearchInDatabase(new SearchQuery(searchText), searchCancellation.Token);
-                    searchResult = searchResult.OrderBy(x => x.Item.Id);
+                    searchResult = searchResult.OrderBy(x => x.WorkItem.Id);
                     var searchResultList = searchResult.ToList();
 
                     if (!searchCancellation.Token.IsCancellationRequested)
@@ -166,7 +189,7 @@ namespace VstsQuickSearch
         {
             ListBox listBox = (ListBox)sender;
             SearchableWorkItem item = listBox.SelectedItem as SearchableWorkItem;
-            System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.Item.Id ?? 0));
+            System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.WorkItem.Id ?? 0));
         }
     }
 }

@@ -16,18 +16,36 @@ namespace VstsQuickSearch
     {
         public bool MatchesSearchQuery(SearchQuery query)
         {
-            return Item.Fields.Values.OfType<string>().Any(x => query.Matches(x)) ||
+            return WorkItem.Fields.Values.OfType<string>().Any(x => query.Matches(x)) ||
                     (History?.Any(x => query.Matches(x.Value)) ?? false);
         }
 
         public override string ToString()
         {
             string title = "[No Title]";
-            Item.Fields.TryGetValue("System.Title", out title);
-            return string.Format("{0} - {1}", Item.Id, title);
+            WorkItem.Fields.TryGetValue("System.Title", out title);
+            return string.Format("{0} - {1}", WorkItem.Id, title);
         }
 
-        public WorkItem Item;
+        public string this[string name]
+        {
+            get
+            {
+                try
+                {
+                    if (name == "System.Id")
+                        return WorkItem.Id.ToString();
+                    else
+                        return WorkItem.Fields[name]?.ToString() ?? "-";
+                }
+                catch
+                {
+                    return "-";
+                }
+            }
+        }
+
+        public WorkItem WorkItem;
         public List<WorkItemHistory> History;
     }
 }

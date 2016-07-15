@@ -13,6 +13,8 @@ namespace VstsQuickSearch
 
         public int NumWorkItems { get { return itemDatabase.Count; } }
 
+        public List<WorkItemFieldReference> LastQueryColumnDisplay { get; private set; }
+
         public IEnumerable<SearchableWorkItem> SearchInDatabase(SearchQuery search, CancellationToken cancellationToken)
         {
             lock (itemDatabase)
@@ -28,11 +30,12 @@ namespace VstsQuickSearch
         {
             // run the 'REST Sample' query
             WorkItemQueryResult result = await connection.WorkItemClient.QueryByIdAsync(queryId);
+            LastQueryColumnDisplay = result.Columns.ToList();
 
             List<SearchableWorkItem> newDatabase = new List<SearchableWorkItem>();
 
             int skip = 0;
-            const int batchSize = 1000;
+            const int batchSize = 100;
             IEnumerable<WorkItemReference> workItemRefs;
             do
             {
@@ -45,7 +48,7 @@ namespace VstsQuickSearch
                     {
                         newDatabase.Add(new SearchableWorkItem
                         {
-                            Item = workItem,
+                            WorkItem = workItem,
                             History = downloadComments ? (await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value)) : null
                         });
                     }
