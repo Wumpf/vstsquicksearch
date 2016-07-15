@@ -24,7 +24,7 @@ namespace VstsQuickSearch
             }
         }
 
-        public async Task DownloadData(ServerConnection connection, Guid queryId)
+        public async Task DownloadData(ServerConnection connection, Guid queryId, bool downloadComments)
         {
             // run the 'REST Sample' query
             WorkItemQueryResult result = await connection.WorkItemClient.QueryByIdAsync(queryId);
@@ -46,7 +46,7 @@ namespace VstsQuickSearch
                         newDatabase.Add(new SearchableWorkItem
                         {
                             Item = workItem,
-                            History = await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value) // That is basically all the comments.
+                            History = downloadComments ? (await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value)) : null
                         });
                     }
                 }

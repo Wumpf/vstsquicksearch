@@ -26,12 +26,14 @@ namespace VstsQuickSearch
         private ServerConnection connection = new ServerConnection();
         private SearchableWorkItemDatabase workItemDatabase = new SearchableWorkItemDatabase();
 
-        public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; set; } = new ObservableCollection<QueryHierarchyItem>();
-        public ObservableCollection<SearchableWorkItem> SearchResults { get; set; } = new ObservableCollection<SearchableWorkItem>();
-
-
         private CancellationTokenSource searchCancellation;
         private Task searchTask;
+
+#region Data Bindings
+        public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; set; } = new ObservableCollection<QueryHierarchyItem>();
+        public ObservableCollection<SearchableWorkItem> SearchResults { get; set; } = new ObservableCollection<SearchableWorkItem>();
+        public bool DownloadComments { get; set; } = false;
+#endregion
 
         private void CancelRunningSearch()
         {
@@ -108,7 +110,7 @@ namespace VstsQuickSearch
                     return;
                 }
 
-                await workItemDatabase.DownloadData(connection, selectedQuery.Id);
+                await workItemDatabase.DownloadData(connection, selectedQuery.Id, DownloadComments);
 
                 labelLastUpdated.Content = DateTime.Now.ToString("HH:mm");
                 labelNumDownloadedWI.Content = workItemDatabase.NumWorkItems.ToString();

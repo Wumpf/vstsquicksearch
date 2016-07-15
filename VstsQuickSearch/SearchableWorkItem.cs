@@ -17,7 +17,7 @@ namespace VstsQuickSearch
         public bool MatchesSearchQuery(SearchQuery query)
         {
             return Item.Fields.Values.OfType<string>().Any(x => query.Matches(x)) ||
-                    History.Any(x => query.Matches(x.Value));
+                    (History?.Any(x => query.Matches(x.Value)) ?? false);
         }
 
         public override string ToString()
