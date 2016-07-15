@@ -189,7 +189,8 @@ namespace VstsQuickSearch
         {
             ListBox listBox = (ListBox)sender;
             SearchableWorkItem item = listBox.SelectedItem as SearchableWorkItem;
-            System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.WorkItem.Id ?? 0));
+            if(item != null && item.WorkItem.Id.HasValue)
+                System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.WorkItem.Id.Value));
         }
     }
 }
