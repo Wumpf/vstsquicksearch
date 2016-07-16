@@ -2,6 +2,7 @@
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Client;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -73,7 +74,41 @@ namespace VstsQuickSearch
             // Get 2 levels of query hierarchy items.
             // According to this this is as deep as we can go
             // https://blog.joergbattermann.com/2016/05/05/vsts-tfs-rest-api-06-retrieving-and-querying-for-existing-work-items/
-            return await WorkItemClient.GetQueriesAsync(settings.ProjectName, expand: QueryExpand.All, depth: 2, includeDeleted: false);
+            var queryList = await WorkItemClient.GetQueriesAsync(settings.ProjectName, expand: QueryExpand.All, depth: 2, includeDeleted: false);
+
+            foreach (var query in queryList)
+                await GetSubsubsubqueries(query);
+
+            return queryList;
+        }
+
+        private async Task GetSubsubsubqueries(QueryHierarchyItem topQuery)
+        {
+            if (topQuery.Children == null)
+                return;
+
+
+            foreach (var query in topQuery.Children)
+            {
+                if (query.Children == null)
+                    continue;
+
+                for (int c = 0; c < query.Children.Count; ++c)
+                {
+                    if ((query.Children[c].HasChildren ?? false) && (query.Children[c].Children == null || query.Children[c].Children.Count == 0))
+                    {
+                        query.Children[c] = await WorkItemClient.GetQueryAsync(settings.ProjectName, query.Children[c].Path, expand: QueryExpand.All, depth: 2, includeDeleted: false);
+                        await GetSubsubsubqueries(query.Children[c]);
+                    }
+                }
+            }
         }
     }
 }
+
+// Retrieve stored Queries (which you / your authenticated user can see and access), up to 2 (sub-)levels or -hierarchies deep.
+// .. it appears that (currently?) you can specify a max value of '2' for the 'depth' parameter which means you might need to 
+// retrieve queries deeper in the hierarchy using another approach:
+// > check the corresponding QueryHierarchyItem for its .HasChildren having a Value (.HasValue==true) and that Value being 'true' BUT
+// .. the .Children being 'null'. Go ahead and use that QueryHierarchyItem's .Path value for the .GetQueryAsync(projectId, queryHierarchyItemPath, ...) method
+// .. to drill down further into the hierarchy

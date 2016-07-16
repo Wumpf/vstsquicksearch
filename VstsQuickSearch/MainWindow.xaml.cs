@@ -238,7 +238,7 @@ namespace VstsQuickSearch
         {
             QueryHierarchyItem selectedQuery = listQueries.SelectedItem as QueryHierarchyItem;
 
-            if(selectedQuery != null && !(selectedQuery.HasChildren ?? false))
+            if(selectedQuery != null && !(selectedQuery.IsFolder ?? false))
             {
                 buttonDownloadWorkItems.IsEnabled = true;
                 Settings.SelectedQueryGuid = selectedQuery.Id;

@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VstsQuickSearch"
+        xmlns:tfsmodel="clr-namespace:Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;assembly=Microsoft.TeamFoundation.WorkItemTracking.WebApi"
         mc:Ignorable="d"
         Title="VstsQuickSearch" SizeToContent="Width" MinHeight="400" MinWidth="600" Height="500" Width="600">
     <Grid Height="auto">
@@ -30,17 +31,23 @@
             <Label Content="Queries for Downloading Work Items:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,0" Grid.Row="1"/>
             <DockPanel Grid.Row="2">
                 <DockPanel>
-                    <DockPanel.Resources>
-                        <HierarchicalDataTemplate x:Key="QueryChildTemplate" >
-                            <TextBlock Text="{Binding Path=Name}" />
-                        </HierarchicalDataTemplate>
-                        <HierarchicalDataTemplate x:Key="QueryTemplate" 
-                                ItemsSource="{Binding Path=Children}" 
-                                ItemTemplate="{StaticResource QueryChildTemplate}">
-                            <TextBlock Text="{Binding Path=Name}" FontWeight="Bold" />
-                        </HierarchicalDataTemplate>
-                    </DockPanel.Resources>
-                    <TreeView x:Name="listQueries" Width="279" Margin="5,0, 5, 5" ItemsSource="{Binding}" ItemTemplate="{StaticResource QueryTemplate}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected"/>
+                    <TreeView x:Name="listQueries" Width="279" Margin="5,0, 5, 5" ItemsSource="{Binding}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected" Height="140">
+                        <TreeView.Resources>
+                            <HierarchicalDataTemplate DataType="{x:Type tfsmodel:QueryHierarchyItem}" ItemsSource="{Binding Children}">
+                                <TextBlock Text="{Binding Path=Name}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </HierarchicalDataTemplate>
+                        </TreeView.Resources>
+                    </TreeView>
                 </DockPanel>
                 <StackPanel>
                     <Button Content="Update Query List" Click="UpdateQueryList" Width="200" HorizontalAlignment="Left"/>
