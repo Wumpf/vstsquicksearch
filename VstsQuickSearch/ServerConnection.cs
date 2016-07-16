@@ -45,8 +45,11 @@ namespace VstsQuickSearch
             this.projectName = projectName;
 
             // May bring up a dialog for credentials.
-            connection = new VssConnection(GetCollectionUri(), new VssClientCredentials(true));
-
+            var credentials = new VssClientCredentials(true);
+            credentials.PromptType = Microsoft.VisualStudio.Services.Common.CredentialPromptType.PromptIfNeeded;
+            credentials.Storage = new VssClientCredentialStorage(); // Using the standard credential storage to cache credentials. I trust this is safe...
+            connection = new VssConnection(GetCollectionUri(), credentials);
+            
             // Create instance of WorkItemTrackingHttpClient using VssConnection
             WorkItemClient = await connection.GetClientAsync<WorkItemTrackingHttpClient>();
         }
