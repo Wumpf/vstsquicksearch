@@ -24,16 +24,15 @@ namespace VstsQuickSearch
         {
             get
             {
-                try
+                if (name == "System.Id")
+                    return WorkItem.Id.ToString();
+                else
                 {
-                    if (name == "System.Id")
-                        return WorkItem.Id.ToString();
+                    object value = null;
+                    if (WorkItem.Fields.TryGetValue(name, out value) && value != null)
+                        return value.ToString();
                     else
-                        return WorkItem.Fields[name]?.ToString() ?? "-";
-                }
-                catch
-                {
-                    return "-";
+                        return "-";
                 }
             }
         }
