@@ -190,10 +190,20 @@ namespace VstsQuickSearch
             return null;
         }
 
-        private async void DownloadWorkItems(object sender, RoutedEventArgs e)
+        private void OnQueryDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var senderUi = (UIElement)sender;
-            senderUi.IsEnabled = false;
+            if(Settings.SelectedQueryGuid != Guid.Empty)
+                DownloadWorkItems();
+        }
+
+        private void OnDownloadWorkItemsButtonPress(object sender, RoutedEventArgs e)
+        {
+            DownloadWorkItems();
+        }
+
+        private async void DownloadWorkItems()
+        {
+            buttonDownloadWorkItems.IsEnabled = false;
             try
             {
                 if (await EnsureConnection() == false)
@@ -203,7 +213,7 @@ namespace VstsQuickSearch
                 {
                     await workItemDatabase.DownloadData(connection, Settings.SelectedQueryGuid, Settings.DownloadComments);
                 }
-                catch(Exception exp)
+                catch (Exception exp)
                 {
                     MessageBox.Show(exp.Message, "Failed to download Work Items!");
                     return;
@@ -230,7 +240,7 @@ namespace VstsQuickSearch
             }
             finally
             {
-                senderUi.IsEnabled = true;
+                buttonDownloadWorkItems.IsEnabled = true;
             }
         }
 

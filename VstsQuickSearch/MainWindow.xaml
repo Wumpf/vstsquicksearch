@@ -31,7 +31,7 @@
             <Label Content="Queries for Downloading Work Items:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,0" Grid.Row="1"/>
             <DockPanel Grid.Row="2">
                 <DockPanel>
-                    <TreeView x:Name="listQueries" Width="279" Margin="5,0, 5, 5" ItemsSource="{Binding}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected" Height="140">
+                    <TreeView x:Name="listQueries" Width="279" Margin="5,0, 5, 5" ItemsSource="{Binding}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected" MouseDoubleClick="OnQueryDoubleClick" Height="140">
                         <TreeView.Resources>
                             <HierarchicalDataTemplate DataType="{x:Type tfsmodel:QueryHierarchyItem}" ItemsSource="{Binding Children}">
                                 <TextBlock Text="{Binding Path=Name}">
@@ -51,7 +51,7 @@
                 </DockPanel>
                 <StackPanel>
                     <Button Content="Update Query List" Click="UpdateQueryList" Width="200" HorizontalAlignment="Left"/>
-                    <Button x:Name="buttonDownloadWorkItems" Content="Download Work Items" Click="DownloadWorkItems" IsEnabled="False" Width="200" HorizontalAlignment="Left" Margin="0, 5,0,5"/>
+                    <Button x:Name="buttonDownloadWorkItems" Content="Download Work Items" Click="OnDownloadWorkItemsButtonPress" IsEnabled="False" Width="200" HorizontalAlignment="Left" Margin="0, 5,0,5"/>
                     <CheckBox Content="Download Comments" IsChecked="{Binding ElementName=Window1, Path=Settings.DownloadComments}"/>
                     <Grid>
                         <Grid.RowDefinitions>
