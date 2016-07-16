@@ -1,14 +1,7 @@
-﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-using Microsoft.VisualStudio.Services.Client;
+﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
-using System;
-using System.Linq;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.Services.WebApi;
-using Microsoft.TeamFoundation.Discussion.Client;
-using System.Threading.Tasks;
-using System.Text;
+using System.Linq;
 
 namespace VstsQuickSearch
 {
