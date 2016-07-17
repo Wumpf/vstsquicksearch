@@ -6,6 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VstsQuickSearch"
         xmlns:tfsmodel="clr-namespace:Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;assembly=Microsoft.TeamFoundation.WorkItemTracking.WebApi"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
         Title="VstsQuickSearch" SizeToContent="Width" MinHeight="400" MinWidth="700" Height="500">
     <Grid Height="auto">
@@ -53,7 +54,13 @@
                 </DockPanel>
                 <StackPanel>
                     <Button x:Name="buttonDownloadWorkItems" Content="Download Work Items" Click="OnDownloadWorkItemsButtonPress" IsEnabled="False" Width="200" HorizontalAlignment="Left" Margin="0, 5,0,5"/>
-                    <CheckBox Content="Download Comments" IsChecked="{Binding ElementName=Window1, Path=Settings.DownloadComments}"/>
+                    <CheckBox Content="Download Comments" IsChecked="{Binding ElementName=Window1, Path=Settings.DownloadComments}" Margin="0,5,0,5"/>
+                    
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Content="Auto Refresh Every " IsChecked="{Binding ElementName=Window1, Path=Settings.AutoRefresh}" Margin="0,5,5,5" Checked="OnAutoRefreshTimerChanges"/>
+                        <xctk:IntegerUpDown Value="{Binding ElementName=Window1, Path=Settings.AutoRefreshIntervalMin}" Width="50" Height="20" ValueChanged="OnAutoRefreshTimerChanges"/>
+                        <Label Content="min"/>
+                    </StackPanel>
                 </StackPanel>
             </DockPanel>
         </Grid>

@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace VstsQuickSearch
 {
@@ -23,10 +24,12 @@ namespace VstsQuickSearch
         private ServerConnection connection = new ServerConnection();
         public SearchableWorkItemDatabase WorkItemDatabase { get; private set; } = new SearchableWorkItemDatabase();
 
-        private AutoResetEvent connectionUnlockEvent = new AutoResetEvent(true);
-
+        private bool connectionOperationInProgress = false;
+        
         private CancellationTokenSource searchCancellation;
         private Task searchTask;
+
+        private DispatcherTimer autoDownloadTimer = new DispatcherTimer();
 
         public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; private set; } = new ObservableCollection<QueryHierarchyItem>();
         public ObservableCollection<SearchableWorkItem> SearchResults { get; private set; } = new ObservableCollection<SearchableWorkItem>();
@@ -36,6 +39,17 @@ namespace VstsQuickSearch
             public ServerConnection.ConnectionSettings ConnectionSettings { get; set; } = new ServerConnection.ConnectionSettings();
             public bool DownloadComments { get; set; } = false;
             public Guid SelectedQueryGuid { get; set; } = Guid.Empty;
+            public bool AutoRefresh { get; set; } = false;
+
+            public int AutoRefreshIntervalMin
+            {
+                get { return autoRefreshIntervalMin; }
+                set
+                {
+                    autoRefreshIntervalMin = Math.Max(1, value);
+                }
+            }
+            private int autoRefreshIntervalMin = 15;
         }
         public SettingsContainer Settings { get; private set; }
         
@@ -51,6 +65,7 @@ namespace VstsQuickSearch
 
         public MainWindow()
         {
+            autoDownloadTimer.Tick += new EventHandler(OnAutoDownload);
             LoadSettings();
             InitializeComponent();
         }
@@ -63,8 +78,6 @@ namespace VstsQuickSearch
 
         #region Setting (De)Serialization
         private const string settingsFileName = "settings.json";
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         private void SaveSettings()
         {
@@ -92,6 +105,8 @@ namespace VstsQuickSearch
 
             if (Settings == null)
                 Settings = new SettingsContainer();
+
+            SetupAutoDownload();
         }
         #endregion
 
@@ -109,19 +124,25 @@ namespace VstsQuickSearch
             }
         }
 
-        private void LockQueriesAndConnection(bool locked)
+        private bool LockQueriesAndConnection(bool locked)
         {
-            connectionUnlockEvent.WaitOne(); // Can we handle this blocking call more gracefully?
+            System.Diagnostics.Debug.Assert(Dispatcher.Thread == Thread.CurrentThread, "Connection operations should only be started and ended from the main thread!");
 
+            if (connectionOperationInProgress && locked)
+                return false;
+
+            connectionOperationInProgress = locked;
             sectionConnect.IsEnabled = !locked;
             sectionQueries.IsEnabled = !locked;
 
-            connectionUnlockEvent.Set();
+            return true;
         }
 
         private async void OnUpdateQueryListButtonClick(object sender, RoutedEventArgs e)
         {
-            LockQueriesAndConnection(true);
+            if(!LockQueriesAndConnection(true))
+                return;
+
             progressBar.IsIndeterminate = true;
 
             try
@@ -209,8 +230,7 @@ namespace VstsQuickSearch
 
         private void OnQueryDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if(Settings.SelectedQueryGuid != Guid.Empty)
-                DownloadWorkItems();
+            DownloadWorkItems();
         }
 
         private void OnDownloadWorkItemsButtonPress(object sender, RoutedEventArgs e)
@@ -218,9 +238,14 @@ namespace VstsQuickSearch
             DownloadWorkItems();
         }
 
-        private async void DownloadWorkItems()
+        private async void DownloadWorkItems(bool connectionAlreadyLocked = false)
         {
-            LockQueriesAndConnection(true);
+            if (Settings.SelectedQueryGuid == Guid.Empty)
+                return;
+
+            if (!LockQueriesAndConnection(true))
+                return;
+
             try
             {
                 if (await EnsureConnection() == false)
@@ -290,11 +315,13 @@ namespace VstsQuickSearch
                 {
                     if (child != null && (child.IsFolder ?? false) && (child.HasChildren ?? false) && (child.Children == null))
                     {
+                        // This may be more conservative than necessary (e.g. it could still be possible to download items with another query), but we're better on the safe side.
+                        if (!LockQueriesAndConnection(true))
+                            return;
+
                         treeViewItem.IsEnabled = false;
                         treeViewItem.IsExpanded = false; // Don't expand immediately, otherwise the TreeView will not see the new items.
 
-                        // This may be more than necessary (e.g. it could still be possible to download items with another query), but we're better on the safe side.
-                        LockQueriesAndConnection(true);
                         progressBar.IsIndeterminate = true;
 
                         try
@@ -345,7 +372,7 @@ namespace VstsQuickSearch
 
                     if (!searchCancellation.Token.IsCancellationRequested)
                     {
-                        Dispatcher.BeginInvoke(new Action(() =>
+                        Dispatcher.Invoke(new Action(() =>
                         {
                             SearchResults.Clear();
                             foreach (var elem in searchResultList)
@@ -363,6 +390,34 @@ namespace VstsQuickSearch
             SearchableWorkItem item = listBox.SelectedItem as SearchableWorkItem;
             if(item != null && item.WorkItem.Id.HasValue)
                 System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.WorkItem.Id.Value));
+        }
+
+        private void OnAutoDownload(object sender, EventArgs e)
+        {
+            // If something else is going on right now, ignore the call.
+            // Rescheduling might also be possible, but this is dangerous since it might be the call itself that keeps the connection busy.
+            if (!connectionOperationInProgress)
+                DownloadWorkItems();
+        }
+
+        private void SetupAutoDownload()
+        {
+            if (Settings.AutoRefresh)
+            {
+                autoDownloadTimer.IsEnabled = true;
+                autoDownloadTimer.Interval = new TimeSpan(days: 0, hours: 0, minutes: Settings.AutoRefreshIntervalMin, seconds: 0);
+                autoDownloadTimer.Start();
+            }
+            else
+            {
+                autoDownloadTimer.IsEnabled = false;
+                autoDownloadTimer.Stop();
+            }
+        }
+
+        private void OnAutoRefreshTimerChanges(object sender, EventArgs e)
+        {
+            SetupAutoDownload();
         }
     }
 }
