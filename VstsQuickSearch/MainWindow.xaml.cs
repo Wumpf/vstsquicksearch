@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -394,6 +393,9 @@ namespace VstsQuickSearch
 
         private void OnAutoDownload(object sender, EventArgs e)
         {
+            if (connection.WorkItemClient == null)
+                return;
+
             // If something else is going on right now, ignore the call.
             // Rescheduling might also be possible, but this is dangerous since it might be the call itself that keeps the connection busy.
             if (!connectionOperationInProgress)
@@ -404,9 +406,10 @@ namespace VstsQuickSearch
         {
             if (Settings.AutoRefresh)
             {
-                autoDownloadTimer.IsEnabled = true;
+                autoDownloadTimer.IsEnabled = false;
                 autoDownloadTimer.Interval = new TimeSpan(days: 0, hours: 0, minutes: Settings.AutoRefreshIntervalMin, seconds: 0);
                 autoDownloadTimer.Start();
+                autoDownloadTimer.IsEnabled = true;
             }
             else
             {
