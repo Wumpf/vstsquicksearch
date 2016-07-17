@@ -12,6 +12,16 @@ namespace VstsQuickSearch
     {
         public class ConnectionSettings : IEquatable<ConnectionSettings>
         {
+            public ConnectionSettings()
+            { }
+
+            public ConnectionSettings(ConnectionSettings settings)
+            {
+                ServerInstance = (string)settings.ServerInstance.Clone();
+                ProjectName = (string)settings.ProjectName.Clone();
+                Collection = (string)settings.Collection.Clone();
+            }
+
             public bool Equals(ConnectionSettings other)
             {
                 return ServerInstance == other.ServerInstance && 
@@ -55,7 +65,7 @@ namespace VstsQuickSearch
                 catch { }
             }
 
-            this.settings = settings;
+            this.settings = new ConnectionSettings(settings);
 
             try
             {
