@@ -57,14 +57,23 @@ namespace VstsQuickSearch
 
             this.settings = settings;
 
-            // May bring up a dialog for credentials.
-            var credentials = new VssClientCredentials(true);
-            credentials.PromptType = Microsoft.VisualStudio.Services.Common.CredentialPromptType.PromptIfNeeded;
-            credentials.Storage = new VssClientCredentialStorage(); // Using the standard credential storage to cache credentials. I trust this is safe...
-            connection = new VssConnection(GetCollectionUri(), credentials);
-            
-            // Create instance of WorkItemTrackingHttpClient using VssConnection
-            WorkItemClient = await connection.GetClientAsync<WorkItemTrackingHttpClient>();
+            try
+            {
+                // May bring up a dialog for credentials.
+                var credentials = new VssClientCredentials(true);
+                credentials.PromptType = Microsoft.VisualStudio.Services.Common.CredentialPromptType.PromptIfNeeded;
+                credentials.Storage = new VssClientCredentialStorage(); // Using the standard credential storage to cache credentials. I trust this is safe...
+                connection = new VssConnection(GetCollectionUri(), credentials);
+
+                // Create instance of WorkItemTrackingHttpClient using VssConnection
+                WorkItemClient = await connection.GetClientAsync<WorkItemTrackingHttpClient>();
+            }
+            catch(Exception e)
+            {
+                connection = null;
+                WorkItemClient = null;
+                throw e;
+            }
         }
 
         public async Task<List<QueryHierarchyItem>> ListQueries()
