@@ -24,14 +24,14 @@ namespace VstsQuickSearch
         public SearchableWorkItemDatabase WorkItemDatabase { get; private set; } = new SearchableWorkItemDatabase();
 
         private bool connectionOperationInProgress = false;
+        private bool searchInProgress = false;
         
-        private CancellationTokenSource searchCancellation;
         private Task searchTask;
 
         private DispatcherTimer autoDownloadTimer = new DispatcherTimer();
 
         public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; private set; } = new ObservableCollection<QueryHierarchyItem>();
-        public ObservableCollection<SearchableWorkItem> SearchResults { get; private set; } = new ObservableCollection<SearchableWorkItem>();
+        public ObservableReplacableCollection<SearchableWorkItem> SearchResults { get; private set; } = new ObservableReplacableCollection<SearchableWorkItem>();
 
         public class SettingsContainer
         {
@@ -51,16 +51,6 @@ namespace VstsQuickSearch
             private int autoRefreshIntervalMin = 15;
         }
         public SettingsContainer Settings { get; private set; }
-        
-
-        private void CancelRunningSearch()
-        {
-            searchCancellation?.Cancel();
-            searchTask?.Wait();
-
-            searchCancellation?.Dispose();
-            searchCancellation = null;
-        }
 
         public MainWindow()
         {
@@ -277,7 +267,7 @@ namespace VstsQuickSearch
                     }
                 }
 
-                UpdateSearchBox(inputSearchText.Text);
+                UpdateSearchBox();
             }
             finally
             {
@@ -351,35 +341,35 @@ namespace VstsQuickSearch
 
         private void SearchChanged(object sender, TextChangedEventArgs e)
         {
-            TextBox searchBox = (TextBox)sender;
-            UpdateSearchBox(searchBox.Text);
+            UpdateSearchBox();
         }
 
-        private void UpdateSearchBox(string searchText)
+        private void UpdateSearchBox()
         {
-            CancelRunningSearch();
+            // If there is still a search task running, don't start another one.
+            if (searchInProgress)
+                return;
 
             // Start new search.
-            searchCancellation = new CancellationTokenSource();
+            searchInProgress = true;
+            string usedSearchText = (string)inputSearchText.Text.Clone();
+
             searchTask = Task.Factory.StartNew(() =>
             {
-                try
-                {
-                    var searchResult = WorkItemDatabase.SearchInDatabase(new SearchQuery(searchText), searchCancellation.Token);
-                    searchResult = searchResult.OrderBy(x => x.WorkItem.Id);
-                    var searchResultList = searchResult.ToList();
+                var searchResult = WorkItemDatabase.SearchInDatabase(new SearchQuery(usedSearchText));
+                searchResult = searchResult.OrderBy(x => x.WorkItem.Id);
+                var searchResultList = searchResult.ToList();
 
-                    if (!searchCancellation.Token.IsCancellationRequested)
-                    {
-                        Dispatcher.Invoke(new Action(() =>
-                        {
-                            SearchResults.Clear();
-                            foreach (var elem in searchResultList)
-                                SearchResults.Add(elem);
-                        }));
-                    }
-                }
-                catch (System.OperationCanceledException) { } // Can happen, everything else is an actual error.
+                // Synchronously on the mainthread.
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    SearchResults.ReplaceItems(searchResultList);
+                    searchInProgress = false;
+
+                    // Searches are only started from the main thread, therefore we cannot collide with another one.
+                    if (usedSearchText != inputSearchText.Text)
+                        UpdateSearchBox();
+                }));
             });
         }
 

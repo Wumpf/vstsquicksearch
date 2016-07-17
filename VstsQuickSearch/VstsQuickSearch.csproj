@@ -150,6 +150,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ObservableRangeCollection.cs" />
     <Compile Include="SearchableWorkItem.cs" />
     <Compile Include="SearchQuery.cs" />
     <Compile Include="ServerConnection.cs" />

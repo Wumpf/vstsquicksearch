@@ -18,14 +18,14 @@ namespace VstsQuickSearch
 
         public List<WorkItemFieldReference> LastQueryColumnDisplay { get; private set; }
 
-        public IEnumerable<SearchableWorkItem> SearchInDatabase(SearchQuery search, CancellationToken cancellationToken)
+        public IEnumerable<SearchableWorkItem> SearchInDatabase(SearchQuery search)
         {
             lock (itemDatabase)
             {
                 if (search.IsEmpty)
                     return itemDatabase;
                 else
-                    return itemDatabase.AsParallel().WithCancellation(cancellationToken).Where(x => x.MatchesSearchQuery(search));
+                    return itemDatabase.AsParallel().Where(x => x.MatchesSearchQuery(search));
             }
         }
 
