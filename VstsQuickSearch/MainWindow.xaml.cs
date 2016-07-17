@@ -137,31 +137,7 @@ namespace VstsQuickSearch
                     foreach (var query in queries)
                         QueryHierachyItems.Add(query);
 
-                    // See if we can reselect the previously selected query.
-                    // Sadly, selecting treeview items is hard...
-                    if (previouslySelectedQuery != Guid.Empty)
-                    {
-                        var itemStack = FindQuery(QueryHierachyItems, previouslySelectedQuery);
-                        if (itemStack != null && itemStack.Count > 0)
-                        {
-                            // It exists! But the treeview doesn't have items that are not expanded...
-                            TreeViewItem currentItem = listQueries.ItemContainerGenerator.ContainerFromItem(itemStack.Pop()) as TreeViewItem;
-
-                            while (itemStack.Count > 0)
-                            {
-                                if (currentItem != null && currentItem.IsExpanded == false)
-                                {
-                                    currentItem.IsExpanded = true;
-                                    currentItem.UpdateLayout(); // Necessary to generate the containers.
-                                }
-
-                                currentItem = currentItem.ItemContainerGenerator.ContainerFromItem(itemStack.Pop()) as TreeViewItem;
-                            }
-
-                            if (currentItem != null)
-                                currentItem.IsSelected = true;
-                        }
-                    }
+                    RestoreQuerySelection(previouslySelectedQuery);
                 }
             }
             finally
@@ -170,7 +146,36 @@ namespace VstsQuickSearch
             }
         }
 
-        static private Stack<QueryHierarchyItem> FindQuery(IEnumerable<QueryHierarchyItem> queries, Guid queryGuid)
+        private void RestoreQuerySelection(Guid previouslySelectedQuery)
+        {
+            // See if we can reselect the previously selected query.
+            // Sadly, selecting treeview items is hard...
+            if (previouslySelectedQuery != Guid.Empty)
+            {
+                var itemStack = FindQuery(QueryHierachyItems, previouslySelectedQuery);
+                if (itemStack != null && itemStack.Count > 0)
+                {
+                    // It exists! But the treeview doesn't have items that are not expanded...
+                    TreeViewItem currentItem = listQueries.ItemContainerGenerator.ContainerFromItem(itemStack.Pop()) as TreeViewItem;
+
+                    while (itemStack.Count > 0)
+                    {
+                        if (currentItem != null && currentItem.IsExpanded == false)
+                        {
+                            currentItem.IsExpanded = true;
+                            currentItem.UpdateLayout(); // Necessary to generate the containers.
+                        }
+
+                        currentItem = currentItem.ItemContainerGenerator.ContainerFromItem(itemStack.Pop()) as TreeViewItem;
+                    }
+
+                    if (currentItem != null)
+                        currentItem.IsSelected = true;
+                }
+            }
+        }
+
+            static private Stack<QueryHierarchyItem> FindQuery(IEnumerable<QueryHierarchyItem> queries, Guid queryGuid)
         {
             if (queries == null)
                 return null;
@@ -257,6 +262,43 @@ namespace VstsQuickSearch
             {
                 buttonDownloadWorkItems.IsEnabled = false;
                 Settings.SelectedQueryGuid = Guid.Empty;
+            }
+        }
+
+        private async void OnQueryFolderExpanded(object sender, RoutedEventArgs e)
+        {
+            TreeViewItem treeViewItem = e.OriginalSource as TreeViewItem;
+            QueryHierarchyItem expandedQuery = treeViewItem?.Header as QueryHierarchyItem;
+
+            // Make sure children are loaded.
+            if (expandedQuery != null && (expandedQuery.IsFolder ?? false) && expandedQuery.Children != null)
+            {
+                foreach (var child in expandedQuery.Children)
+                {
+                    if (child != null && (child.IsFolder ?? false) && (child.HasChildren ?? false) && (child.Children == null))
+                    {
+                        treeViewItem.IsEnabled = false;
+                        treeViewItem.IsExpanded = false; // Don't expand immediately, otherwise the TreeView will not see the new items.
+                        try
+                        {
+                            // Doing multiple queries is extremly expensive. Therefore we check if there is a child that should be expandable and if yes, do a deep query of the item we're about to expand.
+                            await connection.RetrieveSubqueries(expandedQuery);
+                        }
+                        catch (Exception exp)
+                        {
+                            MessageBox.Show(exp.Message, "Failed to expand Query folder!");
+                            return;
+                        }
+                        finally
+                        {
+                            treeViewItem.Header = expandedQuery;
+                            treeViewItem.IsEnabled = true;
+                            treeViewItem.IsExpanded = true;
+                            treeViewItem.UpdateLayout();
+                        }
+                        break; // The only query.
+                    }
+                }
             }
         }
 
