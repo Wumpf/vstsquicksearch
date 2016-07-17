@@ -228,7 +228,8 @@ namespace VstsQuickSearch
 
                 try
                 {
-                    await WorkItemDatabase.DownloadData(connection, Settings.SelectedQueryGuid, Settings.DownloadComments);
+                    await WorkItemDatabase.DownloadData(connection, Settings.SelectedQueryGuid, Settings.DownloadComments,
+                                                        progress => progressBar.Value = progress * 100);
                 }
                 catch (Exception exp)
                 {
@@ -257,6 +258,7 @@ namespace VstsQuickSearch
             finally
             {
                 LockQueriesAndConnection(false);
+                progressBar.Value = 0.0;
             }
         }
 
@@ -293,6 +295,7 @@ namespace VstsQuickSearch
 
                         // This may be more than necessary (e.g. it could still be possible to download items with another query), but we're better on the safe side.
                         LockQueriesAndConnection(true);
+                        progressBar.IsIndeterminate = true;
 
                         try
                         {
@@ -312,6 +315,7 @@ namespace VstsQuickSearch
                             treeViewItem.UpdateLayout();
 
                             LockQueriesAndConnection(false);
+                            progressBar.IsIndeterminate = false;
                         }
                         break; // The only query.
                     }

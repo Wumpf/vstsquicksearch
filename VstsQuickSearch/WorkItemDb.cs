@@ -29,13 +29,15 @@ namespace VstsQuickSearch
             }
         }
 
-        public async Task DownloadData(ServerConnection connection, Guid queryId, bool downloadComments)
+        public async Task DownloadData(ServerConnection connection, Guid queryId, bool downloadComments, Action<float> progressCallback)
         {
             // run the 'REST Sample' query
             WorkItemQueryResult result = await connection.WorkItemClient.QueryByIdAsync(queryId);
             LastQueryColumnDisplay = result.Columns.ToList();
 
             List<SearchableWorkItem> newDatabase = new List<SearchableWorkItem>();
+
+            int totalNumWorkItems = result.WorkItems.Count();
 
             int skip = 0;
             const int batchSize = 100;
@@ -54,6 +56,8 @@ namespace VstsQuickSearch
                             WorkItem = workItem,
                             History = downloadComments ? (await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value)) : null
                         });
+
+                        progressCallback((float)newDatabase.Count / totalNumWorkItems);
                     }
                 }
                 skip += batchSize;
