@@ -57,7 +57,7 @@
                     <CheckBox Content="Download Comments" IsChecked="{Binding ElementName=Window1, Path=Settings.DownloadComments}" Margin="0,5,0,5"/>
                     
                     <StackPanel Orientation="Horizontal">
-                        <CheckBox Content="Auto Refresh Every " IsChecked="{Binding ElementName=Window1, Path=Settings.AutoRefresh}" Margin="0,5,5,5" Checked="OnAutoRefreshTimerChanges"/>
+                        <CheckBox Content="Auto Refresh Every " IsChecked="{Binding ElementName=Window1, Path=Settings.AutoRefresh}" Margin="0,5,5,5" Checked="OnAutoRefreshTimerChanges" Unchecked="OnAutoRefreshTimerChanges"/>
                         <xctk:IntegerUpDown Value="{Binding ElementName=Window1, Path=Settings.AutoRefreshIntervalMin}" Width="50" Height="20" ValueChanged="OnAutoRefreshTimerChanges"/>
                         <Label Content="min"/>
                     </StackPanel>
