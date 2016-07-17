@@ -10,7 +10,7 @@
         Title="VstsQuickSearch" SizeToContent="Width" MinHeight="400" MinWidth="600" Height="500" Width="600">
     <Grid Height="auto">
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto" MinHeight="200"/>
+            <RowDefinition Height="230" MinHeight="200"/>
             <RowDefinition Height="15"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -31,7 +31,7 @@
             <Label Content="Queries for Downloading Work Items:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,0" Grid.Row="1"/>
             <DockPanel Grid.Row="2">
                 <DockPanel>
-                    <TreeView x:Name="listQueries" Width="279" Margin="5,0, 5, 5" ItemsSource="{Binding}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected" MouseDoubleClick="OnQueryDoubleClick" Height="140">
+                    <TreeView x:Name="listQueries" Width="350" Margin="5,0, 5, 5" ItemsSource="{Binding}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected" MouseDoubleClick="OnQueryDoubleClick"  TreeViewItem.Expanded="OnQueryFolderExpanded">
                         <TreeView.Resources>
                             <HierarchicalDataTemplate DataType="{x:Type tfsmodel:QueryHierarchyItem}" ItemsSource="{Binding Children}">
                                 <TextBlock Text="{Binding Path=Name}">
