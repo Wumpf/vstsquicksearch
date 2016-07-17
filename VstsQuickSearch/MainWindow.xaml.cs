@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -20,15 +21,15 @@ namespace VstsQuickSearch
     public partial class MainWindow : Window
     {
         private ServerConnection connection = new ServerConnection();
-        private SearchableWorkItemDatabase workItemDatabase = new SearchableWorkItemDatabase();
+        public SearchableWorkItemDatabase WorkItemDatabase { get; private set; } = new SearchableWorkItemDatabase();
+
+        private AutoResetEvent connectionUnlockEvent = new AutoResetEvent(true);
 
         private CancellationTokenSource searchCancellation;
         private Task searchTask;
 
-        #region Data Bindings
-        public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; set; } = new ObservableCollection<QueryHierarchyItem>();
-        public ObservableCollection<SearchableWorkItem> SearchResults { get; set; } = new ObservableCollection<SearchableWorkItem>();
-        #endregion
+        public ObservableCollection<QueryHierarchyItem> QueryHierachyItems { get; private set; } = new ObservableCollection<QueryHierarchyItem>();
+        public ObservableCollection<SearchableWorkItem> SearchResults { get; private set; } = new ObservableCollection<SearchableWorkItem>();
 
         public class SettingsContainer
         {
@@ -62,6 +63,8 @@ namespace VstsQuickSearch
 
         #region Setting (De)Serialization
         private const string settingsFileName = "settings.json";
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         private void SaveSettings()
         {
@@ -106,12 +109,20 @@ namespace VstsQuickSearch
             }
         }
 
-        private async void UpdateQueryList(object sender, RoutedEventArgs e)
+        private void LockQueriesAndConnection(bool locked)
         {
-            var senderUi = (UIElement)sender;
-            senderUi.IsEnabled = false;
+            connectionUnlockEvent.WaitOne(); // Can we handle this blocking call more gracefully?
 
-            buttonDownloadWorkItems.IsEnabled = false;
+            sectionConnect.IsEnabled = !locked;
+            sectionQueries.IsEnabled = !locked;
+
+            connectionUnlockEvent.Set();
+        }
+
+        private async void OnUpdateQueryListButtonClick(object sender, RoutedEventArgs e)
+        {
+            LockQueriesAndConnection(true);
+            progressBar.IsIndeterminate = true;
 
             try
             {
@@ -142,7 +153,8 @@ namespace VstsQuickSearch
             }
             finally
             {
-                senderUi.IsEnabled = true;
+                LockQueriesAndConnection(false);
+                progressBar.IsIndeterminate = false;
             }
         }
 
@@ -175,7 +187,7 @@ namespace VstsQuickSearch
             }
         }
 
-            static private Stack<QueryHierarchyItem> FindQuery(IEnumerable<QueryHierarchyItem> queries, Guid queryGuid)
+        static private Stack<QueryHierarchyItem> FindQuery(IEnumerable<QueryHierarchyItem> queries, Guid queryGuid)
         {
             if (queries == null)
                 return null;
@@ -208,7 +220,7 @@ namespace VstsQuickSearch
 
         private async void DownloadWorkItems()
         {
-            buttonDownloadWorkItems.IsEnabled = false;
+            LockQueriesAndConnection(true);
             try
             {
                 if (await EnsureConnection() == false)
@@ -216,7 +228,7 @@ namespace VstsQuickSearch
 
                 try
                 {
-                    await workItemDatabase.DownloadData(connection, Settings.SelectedQueryGuid, Settings.DownloadComments);
+                    await WorkItemDatabase.DownloadData(connection, Settings.SelectedQueryGuid, Settings.DownloadComments);
                 }
                 catch (Exception exp)
                 {
@@ -224,14 +236,13 @@ namespace VstsQuickSearch
                     return;
                 }
 
-                labelLastUpdated.Content = DateTime.Now.ToString("HH:mm");
-                labelNumDownloadedWI.Content = workItemDatabase.NumWorkItems.ToString();
+                labelLastUpdated.Text = DateTime.Now.ToString("HH:mm");
 
                 var gridView = new GridView();
                 listViewSearchResults.View = gridView;
-                if (workItemDatabase.LastQueryColumnDisplay != null)
+                if (WorkItemDatabase.LastQueryColumnDisplay != null)
                 {
-                    foreach (var column in workItemDatabase.LastQueryColumnDisplay)
+                    foreach (var column in WorkItemDatabase.LastQueryColumnDisplay)
                     {
                         gridView.Columns.Add(new GridViewColumn
                         {
@@ -245,7 +256,7 @@ namespace VstsQuickSearch
             }
             finally
             {
-                buttonDownloadWorkItems.IsEnabled = true;
+                LockQueriesAndConnection(false);
             }
         }
 
@@ -279,6 +290,10 @@ namespace VstsQuickSearch
                     {
                         treeViewItem.IsEnabled = false;
                         treeViewItem.IsExpanded = false; // Don't expand immediately, otherwise the TreeView will not see the new items.
+
+                        // This may be more than necessary (e.g. it could still be possible to download items with another query), but we're better on the safe side.
+                        LockQueriesAndConnection(true);
+
                         try
                         {
                             // Doing multiple queries is extremly expensive. Therefore we check if there is a child that should be expandable and if yes, do a deep query of the item we're about to expand.
@@ -295,6 +310,8 @@ namespace VstsQuickSearch
                             treeViewItem.IsEnabled = true;
                             treeViewItem.IsExpanded = true;
                             treeViewItem.UpdateLayout();
+
+                            LockQueriesAndConnection(false);
                         }
                         break; // The only query.
                     }
@@ -318,7 +335,7 @@ namespace VstsQuickSearch
             {
                 try
                 {
-                    var searchResult = workItemDatabase.SearchInDatabase(new SearchQuery(searchText), searchCancellation.Token);
+                    var searchResult = WorkItemDatabase.SearchInDatabase(new SearchQuery(searchText), searchCancellation.Token);
                     searchResult = searchResult.OrderBy(x => x.WorkItem.Id);
                     var searchResultList = searchResult.ToList();
 

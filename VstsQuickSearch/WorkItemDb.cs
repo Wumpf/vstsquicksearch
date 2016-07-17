@@ -1,15 +1,18 @@
 ﻿using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace VstsQuickSearch
 {
-    class SearchableWorkItemDatabase
+    public class SearchableWorkItemDatabase : INotifyPropertyChanged
     {
         private List<SearchableWorkItem> itemDatabase = new List<SearchableWorkItem>();
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public int NumWorkItems { get { return itemDatabase.Count; } }
 
@@ -62,6 +65,9 @@ namespace VstsQuickSearch
             {
                 itemDatabase = newDatabase;
             }
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NumWorkItems)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastQueryColumnDisplay)));
         }
     }
 }

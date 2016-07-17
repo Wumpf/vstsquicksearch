@@ -7,12 +7,13 @@
         xmlns:local="clr-namespace:VstsQuickSearch"
         xmlns:tfsmodel="clr-namespace:Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;assembly=Microsoft.TeamFoundation.WorkItemTracking.WebApi"
         mc:Ignorable="d"
-        Title="VstsQuickSearch" SizeToContent="Width" MinHeight="400" MinWidth="600" Height="500" Width="600">
+        Title="VstsQuickSearch" SizeToContent="Width" MinHeight="400" MinWidth="700" Height="500">
     <Grid Height="auto">
         <Grid.RowDefinitions>
             <RowDefinition Height="230" MinHeight="200"/>
             <RowDefinition Height="15"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <Grid>
             <Grid.RowDefinitions>
@@ -21,15 +22,16 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Horizontal" Grid.Row="0">
+            <StackPanel Name="sectionConnect"  Orientation="Horizontal" Grid.Row="0">
                 <Label Content="Server Adress:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
-                <TextBox Text="{Binding ElementName=Window1, Path=Settings.ConnectionSettings.ServerInstance}" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Center" Width="180"/>
+                <TextBox Text="{Binding ElementName=Window1, Path=Settings.ConnectionSettings.ServerInstance}" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Center" Width="150"/>
                 <Label Content="Project Name:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
-                <TextBox Text="{Binding ElementName=Window1, Path=Settings.ConnectionSettings.ProjectName}"  HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Center" Width="180"/>
+                <TextBox Text="{Binding ElementName=Window1, Path=Settings.ConnectionSettings.ProjectName}"  HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Center" Width="150"/>
+                <Button Content="Connect &amp; Update Query List" Click="OnUpdateQueryListButtonClick" Width="180" Margin="10,5,5,5"/>
             </StackPanel>
 
             <Label Content="Queries for Downloading Work Items:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,0" Grid.Row="1"/>
-            <DockPanel Grid.Row="2">
+            <DockPanel Name="sectionQueries" Grid.Row="2">
                 <DockPanel>
                     <TreeView x:Name="listQueries" Width="350" Margin="5,0, 5, 5" ItemsSource="{Binding}" DataContext="{Binding ElementName=Window1, Path=QueryHierachyItems}" SelectedItemChanged="QuerySelected" MouseDoubleClick="OnQueryDoubleClick"  TreeViewItem.Expanded="OnQueryFolderExpanded">
                         <TreeView.Resources>
@@ -50,23 +52,8 @@
                     </TreeView>
                 </DockPanel>
                 <StackPanel>
-                    <Button Content="Update Query List" Click="UpdateQueryList" Width="200" HorizontalAlignment="Left"/>
                     <Button x:Name="buttonDownloadWorkItems" Content="Download Work Items" Click="OnDownloadWorkItemsButtonPress" IsEnabled="False" Width="200" HorizontalAlignment="Left" Margin="0, 5,0,5"/>
                     <CheckBox Content="Download Comments" IsChecked="{Binding ElementName=Window1, Path=Settings.DownloadComments}"/>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="auto"/>
-                            <RowDefinition Height="auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Last Update:" Grid.Row="0" Grid.Column="0"/>
-                        <Label x:Name="labelLastUpdated" Grid.Row="0" Grid.Column="1"/>
-                        <Label Content="# Work Items:" Grid.Row="1" Grid.Column="0"/>
-                        <Label x:Name="labelNumDownloadedWI" Grid.Row="1" Grid.Column="1"/>
-                    </Grid>
                 </StackPanel>
             </DockPanel>
         </Grid>
@@ -86,5 +73,56 @@
             </Grid>
             <ListView x:Name="listViewSearchResults" Grid.Row="1" Margin="5,0,5,5" ItemsSource="{Binding ElementName=Window1, Path=SearchResults}" MouseDoubleClick="OnWorkItemDoubleClick"/>
         </Grid>
+
+
+        <StatusBar Grid.Row="3">
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="Auto" />
+
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+
+            <StatusBarItem Grid.Column="0">
+                <TextBlock Text="Found Work Items:" />
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="1">
+                <TextBlock Text="{Binding ElementName=Window1, Path=SearchResults.Count}"/>
+            </StatusBarItem>
+            <Separator Grid.Column="2"/>
+
+            <StatusBarItem Grid.Column="3">
+                <TextBlock Text="Loaded Work Items:" />
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="4">
+                <TextBlock Text="{Binding ElementName=Window1, Path=WorkItemDatabase.NumWorkItems}"/>
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="5">
+                <TextBlock Text="Last Database Update:" />
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="6">
+                <TextBlock Name="labelLastUpdated" TextAlignment="Right" />
+            </StatusBarItem>
+            <Separator Grid.Column="7" />
+
+            <StatusBarItem Grid.Column="8" HorizontalContentAlignment="Stretch">
+                <ProgressBar Name="progressBar" DockPanel.Dock="Left" Height="16"/>
+            </StatusBarItem>
+        </StatusBar>
+
     </Grid>
+    
 </Window>
