@@ -4,4 +4,6 @@ This tool allows you to download all tickets for a given query and search throug
 
 The search looks through all elements of a work item and has been proven responsive with more than 16k items in a query.
 
+[Download latest build](latestbuild.zip)
+
 ![Screenshot](screenshot.jpg?raw=true)
