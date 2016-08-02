@@ -7,8 +7,8 @@
         xmlns:local="clr-namespace:VstsQuickSearch"
         xmlns:tfsmodel="clr-namespace:Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;assembly=Microsoft.TeamFoundation.WorkItemTracking.WebApi"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        mc:Ignorable="d"
-        Title="VstsQuickSearch" SizeToContent="Width" MinHeight="400" MinWidth="700" Height="500">
+        mc:Ignorable="d" 
+        SizeToContent="Width" MinHeight="400" MinWidth="700" Height="500">
     <Grid Height="auto">
         <Grid.RowDefinitions>
             <RowDefinition Height="230" MinHeight="200"/>

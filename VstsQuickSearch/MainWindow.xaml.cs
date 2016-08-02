@@ -48,12 +48,14 @@ namespace VstsQuickSearch
                     autoRefreshIntervalMin = Math.Max(1, value);
                 }
             }
-            private int autoRefreshIntervalMin = 15;
+            private int autoRefreshIntervalMin = 14;
         }
         public SettingsContainer Settings { get; private set; }
 
         public MainWindow()
         {
+            Title = $"VstsQuickSearch - {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
+
             autoDownloadTimer.Tick += new EventHandler(OnAutoDownload);
             LoadSettings();
             InitializeComponent();
