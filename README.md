@@ -7,3 +7,11 @@ The search looks through all elements of a work item and has been proven respons
 [Download latest build](latestbuild.zip)
 
 ![Screenshot](screenshot.jpg?raw=true)
+
+## Version History
+
+* 1.1
+ *  [#1](/../../issues/1) Download from hierarchical queries works now.
+ * [#2](/../../issues/2) Work item values are converted to string ahead of time now. This allows searching for fields like id which are numbers.
+ * [#4](/../../issues/4) Search words no longer need to appear in a single field.
+ 
