@@ -37,33 +37,43 @@ namespace VstsQuickSearch
 
             List<SearchableWorkItem> newDatabase = new List<SearchableWorkItem>();
 
-            int totalNumWorkItems = result.WorkItems.Count();
-
-            int skip = 0;
             const int batchSize = 100;
-            IEnumerable<WorkItemReference> workItemRefs;
-            do
+
+            int totalNumWorkItems = (result.WorkItems?.Count() ?? 0) + (result.WorkItemRelations?.Count() ?? 0);
+
+            if (totalNumWorkItems != 0)
             {
-                workItemRefs = result.WorkItems.Skip(skip).Take(batchSize);
-                if (workItemRefs.Any())
+                IEnumerable<int> workItemIds = Enumerable.Empty<int>();
+                if (result.WorkItems != null)
+                    workItemIds = result.WorkItems.Select(x => x.Id);
+                if (result.WorkItemRelations != null)
+                    workItemIds = workItemIds.Concat(result.WorkItemRelations.Where(x => x.Target != null).Select(x => x.Target.Id));
+
+                List<int> workItemIdsList = workItemIds.ToList(); // To ensure the Linq expression is not unnecessarily often evaluated;
+
+                int skip = 0;
+                IEnumerable<int> workItemIdBatch;
+                do
                 {
-                    // get details for each work item in the batch
-                    List<WorkItem> workItems = await connection.WorkItemClient.GetWorkItemsAsync(workItemRefs.Select(wir => wir.Id));
-                    foreach (WorkItem workItem in workItems)
+                    workItemIdBatch = workItemIdsList.Skip(skip).Take(batchSize);
+                    if (workItemIdBatch.Any())
                     {
-                        newDatabase.Add(new SearchableWorkItem
+                        // get details for each work item in the batch
+                        List<WorkItem> workItems = await connection.WorkItemClient.GetWorkItemsAsync(workItemIdBatch);
+                        foreach (WorkItem workItem in workItems)
                         {
-                            WorkItem = workItem,
-                            History = downloadComments ? (await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value)) : null
-                        });
-
-                        progressCallback((float)newDatabase.Count / totalNumWorkItems);
+                            newDatabase.Add(new SearchableWorkItem
+                            {
+                                WorkItem = workItem,
+                                History = downloadComments ? (await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value)) : null
+                            });
+                            progressCallback((float)newDatabase.Count / totalNumWorkItems);
+                        }
                     }
+                    skip += batchSize;
                 }
-                skip += batchSize;
+                while (workItemIdBatch.Count() == batchSize);
             }
-            while (workItemRefs.Count() == batchSize);
-
 
             lock (itemDatabase)
             {
