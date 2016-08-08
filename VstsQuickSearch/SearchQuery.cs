@@ -18,12 +18,9 @@ namespace VstsQuickSearch
             words = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
-        public bool Matches(string stringToCheck)
+        public bool Matches(IEnumerable<string> stringsToCheck)
         {
-            if (string.IsNullOrEmpty(stringToCheck))
-                return false;
-
-            return words.All(word => stringToCheck.IndexOf(word, StringComparison.InvariantCultureIgnoreCase) >= 0);
+            return words.All(word => stringsToCheck.Any(stringToCheck => stringToCheck.IndexOf(word, StringComparison.InvariantCultureIgnoreCase) >= 0));
         }
     }
 }

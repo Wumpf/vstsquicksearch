@@ -14,12 +14,15 @@ namespace VstsQuickSearch
             fields.TryAdd("System.Id", workItem.Id.ToString());
 
             Id = workItem.Id ?? -1;
+
+            stringsToSearch = fields.Values;
+            if (history != null)
+                stringsToSearch = stringsToSearch.Concat(history.Select(x => x.Value));
         }
 
         public bool MatchesSearchQuery(SearchQuery query)
         {
-            return fields.Values.Any(x => query.Matches(x)) ||
-                    (history?.Any(x => query.Matches(x.Value)) ?? false);
+            return query.Matches(stringsToSearch);
         }
 
         public override string ToString()
@@ -48,5 +51,6 @@ namespace VstsQuickSearch
         public int Id { get; private set; }
         private Dictionary<string, string> fields;
         private List<WorkItemHistory> history;
+        private IEnumerable<string> stringsToSearch;
     }
 }
