@@ -359,7 +359,7 @@ namespace VstsQuickSearch
             searchTask = Task.Factory.StartNew(() =>
             {
                 var searchResult = WorkItemDatabase.SearchInDatabase(new SearchQuery(usedSearchText));
-                searchResult = searchResult.OrderBy(x => x.WorkItem.Id);
+                searchResult = searchResult.OrderBy(x => x.Id);
                 var searchResultList = searchResult.ToList();
 
                 // Synchronously on the mainthread.
@@ -379,8 +379,8 @@ namespace VstsQuickSearch
         {
             ListBox listBox = (ListBox)sender;
             SearchableWorkItem item = listBox.SelectedItem as SearchableWorkItem;
-            if(item != null && item.WorkItem.Id.HasValue)
-                System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.WorkItem.Id.Value));
+            if(item != null)
+                System.Diagnostics.Process.Start(connection.GetWorkItemUrl(item.Id));
         }
 
         private void OnAutoDownload(object sender, EventArgs e)

@@ -62,11 +62,7 @@ namespace VstsQuickSearch
                         List<WorkItem> workItems = await connection.WorkItemClient.GetWorkItemsAsync(workItemIdBatch);
                         foreach (WorkItem workItem in workItems)
                         {
-                            newDatabase.Add(new SearchableWorkItem
-                            {
-                                WorkItem = workItem,
-                                History = downloadComments ? (await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value)) : null
-                            });
+                            newDatabase.Add(new SearchableWorkItem(workItem, downloadComments ? (await connection.WorkItemClient.GetHistoryAsync(workItem.Id.Value)) : null));
                             progressCallback((float)newDatabase.Count / totalNumWorkItems);
                         }
                     }
